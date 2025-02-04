@@ -3,7 +3,7 @@
 import type { Attachment, Message } from "ai";
 import { useChat } from "ai/react";
 import { useState } from "react";
-//import { useSWRConfig } from "swr";
+import { useSWRConfig } from "swr";
 
 //import { ChatHeader } from '@/components/chat-header';
 //import type { Vote } from '@/lib/db/schema';
@@ -29,7 +29,7 @@ export default function Chat({
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
 }) {
-  //const { mutate } = useSWRConfig();
+  const { mutate } = useSWRConfig();
 
   const {
     messages,
@@ -48,9 +48,9 @@ export default function Chat({
     experimental_throttle: 100,
     sendExtraMessageFields: true,
     generateId: generateUUID,
-    //onFinish: () => {
-    //  mutate("/api/history");
-    //},
+    onFinish: () => {
+      mutate("/api/history");
+    },
   });
 
   //const { data: votes } = useSWR<Array<Vote>>(

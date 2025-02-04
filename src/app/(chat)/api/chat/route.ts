@@ -5,24 +5,24 @@ import {
   streamText,
 } from "ai";
 
-//import { auth } from "@/app/(auth)/auth";
+import { auth } from "@/app/(auth)/auth";
 import { customModel } from "@/lib/ai";
 import { models } from "@/lib/ai/models";
-//import {
-//  deleteChatById,
-//  getChatById,
-//  saveChat,
-//  saveMessages,
-//} from "@/lib/db/queries";
+import {
+  deleteChatById,
+  getChatById,
+  saveChat,
+  saveMessages,
+} from "@/lib/db/queries";
 import {
   generateUUID,
-  //getMostRecentUserMessage,
-  //sanitizeResponseMessages,
+  getMostRecentUserMessage,
+  sanitizeResponseMessages,
 } from "@/lib/utils";
-import { systemPrompt, deepSeekPrompt } from "@/lib/ai/prompts";
+import { systemPrompt } from "@/lib/ai/prompts";
 //import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 
-//import { generateTitleFromUserMessage } from "../../actions";
+import { generateTitleFromUserMessage } from "../../actions";
 //import { createDocument } from "@/lib/ai/tools/create-document";
 //import { updateDocument } from "@/lib/ai/tools/update-document";
 //import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
@@ -47,17 +47,17 @@ export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const {
-    //id,
+    id,
     messages,
     modelId,
   }: { id: string; messages: Array<Message>; modelId: string } =
     await request.json();
 
-  //const session = await auth();
-  //
-  //if (!session || !session.user || !session.user.id) {
-  //  return new Response("Unauthorized", { status: 401 });
-  //}
+  const session = await auth();
+
+  if (!session || !session.user || !session.user.id) {
+    return new Response("Unauthorized", { status: 401 });
+  }
 
   const model = models.find((model) => model.id === modelId);
 
@@ -65,22 +65,22 @@ export async function POST(request: Request) {
     return new Response("Model not found", { status: 404 });
   }
 
-  //const userMessage = getMostRecentUserMessage(messages);
-  //
-  //if (!userMessage) {
-  //  return new Response("No user message found", { status: 400 });
-  //}
+  const userMessage = getMostRecentUserMessage(messages);
 
-  //const chat = await getChatById({ id });
+  if (!userMessage) {
+    return new Response("No user message found", { status: 400 });
+  }
 
-  //if (!chat) {
-  //  const title = await generateTitleFromUserMessage({ message: userMessage });
-  //  await saveChat({ id, userId: session.user.id, title });
-  //}
+  const chat = await getChatById({ id });
 
-  //await saveMessages({
-  //  messages: [{ ...userMessage, createdAt: new Date(), chatId: id }],
-  //});
+  if (!chat) {
+    const title = await generateTitleFromUserMessage({ message: userMessage });
+    await saveChat({ id, userId: session.user.id, title });
+  }
+
+  await saveMessages({
+    messages: [{ ...userMessage, createdAt: new Date(), chatId: id }],
+  });
 
   return createDataStreamResponse({
     execute: (dataStream) => {
@@ -105,26 +105,27 @@ export async function POST(request: Request) {
           },
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           onFinish: async ({ response }) => {
-            //if (session.user?.id) {
-            try {
-              //const responseMessagesWithoutIncompleteToolCalls =
-              //  sanitizeResponseMessages(response.messages);
-              //await saveMessages({
-              //  messages: responseMessagesWithoutIncompleteToolCalls.map(
-              //    (message) => {
-              //      return {
-              //        id: message.id,
-              //        chatId: id,
-              //        role: message.role,
-              //        content: message.content,
-              //        createdAt: new Date(),
-              //      };
-              //    },
-              //  ),
-              //});
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (error) {
-              console.error("Failed to save chat");
+            if (session.user?.id) {
+              try {
+                const responseMessagesWithoutIncompleteToolCalls =
+                  sanitizeResponseMessages(response.messages);
+                await saveMessages({
+                  messages: responseMessagesWithoutIncompleteToolCalls.map(
+                    (message) => {
+                      return {
+                        id: message.id,
+                        chatId: id,
+                        role: message.role,
+                        content: message.content,
+                        createdAt: new Date(),
+                      };
+                    },
+                  ),
+                });
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              } catch (error) {
+                console.error("Failed to save chat");
+              }
             }
           },
         },
@@ -148,24 +149,27 @@ export async function DELETE(request: Request) {
     return new Response("Not Found", { status: 404 });
   }
 
-  //const session = await auth();
-  //
-  //if (!session || !session.user) {
-  //  return new Response("Unauthorized", { status: 401 });
-  //}
+  const session = await auth();
+
+  if (!session || !session.user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
 
   try {
-    //const chat = await getChatById({ id });
-    //
-    //if (chat.userId !== session.user.id) {
-    //  return new Response("Unauthorized", { status: 401 });
-    //}
-    //
-    //await deleteChatById({ id });
+    const chat = await getChatById({ id });
+
+    console.log(chat);
+
+    if (chat && chat.userId !== session.user.id) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    await deleteChatById({ id });
 
     return new Response("Chat deleted", { status: 200 });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_) {
+  } catch (e) {
+    console.error(e);
     return new Response("An error occurred while processing your request", {
       status: 500,
     });

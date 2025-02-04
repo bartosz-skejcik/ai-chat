@@ -119,7 +119,7 @@ function PureMultimodalInput({
 
   const submitForm = useCallback(() => {
     // TODO: uncomment this later
-    //window.history.replaceState({}, "", `/chat/${chatId}`);
+    window.history.replaceState({}, "", `/chat/${chatId}`);
 
     handleSubmit(undefined, {
       experimental_attachments: attachments,

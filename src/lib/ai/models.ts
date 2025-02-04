@@ -100,3 +100,4 @@ export const models: Array<Model> = [
 ] as const;
 
 export const DEFAULT_MODEL_NAME: string = "llama-3.3-70b-specdec";
+export const DEFAULT_CHAT_MODEL: string = "llama-3.3-70b-specdec";
